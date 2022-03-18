@@ -9,6 +9,15 @@ spec:
     spec:
       serviceAccountName: vault
       volumes:
+      - name: usr-src
+        hostPath:
+          path: /usr/src
+      - name: sys
+        hostPath:
+          path: /sys
+      - name: lib-modules
+        hostPath:
+          path: /lib/modules
       - name: vault-config
         configMap:
           name: vault-config
@@ -18,6 +27,8 @@ spec:
       - name: vault
         image: vault:1.9.4
         command: ["/bin/vault", "server", "-config=/etc/vault.d/vault.hcl"]
+        securityContext:
+          privileged: true
         ports:
         - name: ui
           containerPort: 8200
@@ -60,3 +71,9 @@ spec:
           mountPath: /etc/vault.d/
         - name: vault-data
           mountPath: /vault/data
+        - name: lib-modules 
+          mountPath: /lib/modules
+        - name: sys
+          mountPath: /sys
+        - name: usr-src
+          mountPath: /usr/src

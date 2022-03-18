@@ -54,6 +54,16 @@ vault operator unseal <3 keys>
 
 ---
 
+### Enabling bcc tools 
+```bash
+apk add bcc-tools py3-pip
+pip3 install dnslib cachetools
+
+/usr/share/bcc/tools # ./tcpconnect --d -P 443
+```
+
+---
+
 ### Useful Resources 
 1. [Vault on Kubernetes Deployment Guide](https://learn.hashicorp.com/tutorials/vault/kubernetes-raft-deployment-guide?in=vault/kubernetes)
 2. [Integrated Storage (Raft) Backend](https://www.vaultproject.io/docs/configuration/storage/raft)
