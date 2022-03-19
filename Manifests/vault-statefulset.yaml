@@ -53,6 +53,8 @@ spec:
           value: 'http://127.0.0.1:8200'
         - name: VAULT_CONFIG_DIR
           value: /etc/vault.d
+        - name: VAULT_RAFT_PATH
+          value: /vault/data
         - name: VAULT_API_ADDR
           value: 'http://$(POD_IP):8200'
         - name: VAULT_CLUSTER_ADDR

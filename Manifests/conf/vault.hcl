@@ -3,9 +3,7 @@ disable_mlock = true
 ui            = true
 
 # Storage Backend Configuration - Raft (Integrated Storage)
-storage "raft" {
-  path = "/vault/data"
-}
+storage "raft" {}
 
 listener "tcp" {
   address         = "[::]:8200"
