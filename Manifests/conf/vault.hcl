@@ -4,9 +4,7 @@ ui            = true
 
 # Storage Backend Configuration - Raft (Integrated Storage)
 storage "raft" {
-  retry_join {
-    leader_api_addr = "http://vault-active.vault:8200"
-  }
+  path = "/vault/data"
 }
 
 listener "tcp" {

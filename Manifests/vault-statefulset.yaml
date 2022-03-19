@@ -3,8 +3,8 @@ kind: StatefulSet
 metadata:
   name: vault
 spec:
-  serviceName: vault
-  replicas: 1
+  replicas: 3
+  serviceName: vault-headless
   template:
     spec:
       serviceAccountName: vault
@@ -27,6 +27,14 @@ spec:
         env:
         - name: VAULT_LOG_LEVEL
           value: debug
+        - name: HOST_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
         - name: HOSTNAME
           valueFrom:
             fieldRef:
@@ -39,10 +47,6 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-        - name: VAULT_RAFT_NODE_ID
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
         - name: VAULT_SKIP_VERIFY
           value: "true"
         - name: VAULT_ADDR
@@ -50,11 +54,9 @@ spec:
         - name: VAULT_CONFIG_DIR
           value: /etc/vault.d
         - name: VAULT_API_ADDR
-          value: "http://127.0.0.1:8200"
-        - name: VAULT_RAFT_PATH
-          value: /vault/data
+          value: 'http://$(POD_IP):8200'
         - name: VAULT_CLUSTER_ADDR
-          value: "http://$(HOSTNAME):8201"
+          value: "https://$(HOSTNAME).vault-headless:8201"
         volumeMounts:
         - name: vault-config
           mountPath: /etc/vault.d/

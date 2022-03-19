@@ -8,12 +8,14 @@ Deploying Vault on K8s via Kustomize and using Raft Integrated Storage as Backen
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
-- [Vault](#vault)
-    - [vault.hcl configMap](#vaulthcl-configmap)
-    - [vault-role](#vault-role)
-    - [vault-service-active](#vault-service-active)
-    - [Initializing Vault](#initializing-vault)
-    - [Useful Resources](#useful-resources)
+- [vault.hcl configMap](#vaulthcl-configmap)
+- [vault-role](#vault-role)
+- [Services](#services)
+  - [vault-service-active](#vault-service-active)
+  - [vault-service-headless](#vault-service-headless)
+- [Initializing Vault](#initializing-vault)
+- [High Availability with Integrated Storage](#high-availability-with-integrated-storage)
+- [Useful Resources](#useful-resources)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -33,10 +35,18 @@ Deploying Vault on K8s via Kustomize and using Raft Integrated Storage as Backen
   5. vault-version
 
 ---
-
-### vault-service-active 
+### Services
+#### vault-service-active 
 - Kubernetes service that uses the dynamic labels of Vault to route traffic only to the active vault leader via the selector `vault-active: "true"`
 - Initially when vault pod is up and running this service will not map to it since it's not yet initialized (There's no EndPoint), in order for the service to route to the pod, vault should be initialized
+
+---
+
+#### vault-service-headless
+- A service is becomes headless by specifying `clusterIP: None`
+- It's the service referenced by the StatefulSet `serviceName` key 
+- headless service returns list of IPs for the associated pods
+- A StatefulSet needs a headlessService for Pods discovery and to maintain the Pods sticky network identity
 
 ---
 
@@ -50,6 +60,33 @@ vault operator init
 
 # Unseals vault resulting in the pod having vault-active: true label
 vault operator unseal <3 keys>
+```
+
+---
+
+### High Availability with Integrated Storage 
+- Setting StatefulSet replicas to `3` then applying the kubernetes resources will result in initially `vault-0` pod being scheduled, it needs to be intialized and vault needs to be unsealed 
+- After unsealing the pod `vault-1` will also be scheduled but the readiness probe will fail as it needs to be initialized (We'll make it join `vault-0`) as follows 
+```bash
+kubectl exec -ti vault-1 -- vault operator raft join http://vault-0.vault-headless:8200
+kubectl exec -ti vault-1 -- vault operator unseal <3-keys>
+
+Key       Value
+---       -----
+Joined    true
+
+```
+- Same procedure will be done to `vault-2` and we can list all the available nodes with the command 
+```bash 
+kubectl exec -ti vault-0 
+export VAULT_TOKEN=<token>
+vault operator raft list-peers
+
+Node                                    Address                        State       Voter
+----                                    -------                        -----       -----
+8bc7e17f-2640-bd3b-76d2-f8440f22c10a    vault-0.vault-headless:8201    leader      true
+b2507758-85d4-c4f5-bf19-575eb900bf8f    vault-1.vault-headless:8201    follower    true
+b1a97d24-ad93-1fb4-4429-e4fbae3f8eef    vault-2.vault-headless:8201    follower    true
 ```
 
 ---

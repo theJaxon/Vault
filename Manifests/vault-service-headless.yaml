@@ -1,0 +1,16 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: vault-headless
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8200
+      targetPort: 8200
+    - name: https-internal
+      protocol: TCP
+      port: 8201
+      targetPort: 8201
