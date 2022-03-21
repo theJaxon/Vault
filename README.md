@@ -54,7 +54,7 @@ Deploying Vault on K8s via Kustomize and using Raft Integrated Storage as Backen
 
 ### vault-cronjob-daily-snapshot
 - CronJob that will run daily at 11 AM to take a snapshot and upload it to Minio
-- It's based on the image generated via the Dockerfile in the root of this repository, the image uses minideb as a base then adds vault + mc CLIs
+- It's based on the image generated via the [Dockerfile](https://github.com/theJaxon/Vault/blob/main/Dockerfile) in the root of this repository, the image uses [minideb](https://github.com/bitnami/minideb) as a base then adds vault + mc CLIs
 - Rest of the needed configurations are handled as environment variables
 
 ---
@@ -113,10 +113,9 @@ mc cp `date +"%d-%m-%Y"`.snap minio/vault
 - Assume that the situation is that the main vault instance was running without a PVC and now data is lost but fortunately we took the snapshot 
 - Start by initializing the vault instance once again 
 ```bash
-# For quick unsealing 
 vault operator init
 vault operator unseal <3-keys>
-export VAULT_TOKEN=<generated-root-token>
+export VAULT_TOKEN=<token>
 
 # Download snapshot from minio
 mc cp minio/vault/21-03-2022.snap 21-03-2022.snap
