@@ -13,8 +13,10 @@ Deploying Vault on K8s via Kustomize and using Raft Integrated Storage as Backen
 - [Services](#services)
   - [vault-service-active](#vault-service-active)
   - [vault-service-headless](#vault-service-headless)
+- [vault-cronjob-daily-snapshot](#vault-cronjob-daily-snapshot)
 - [Initializing Vault](#initializing-vault)
 - [High Availability with Integrated Storage](#high-availability-with-integrated-storage)
+- [Backup and Restore Scenario](#backup-and-restore-scenario)
 - [Useful Resources](#useful-resources)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -47,6 +49,13 @@ Deploying Vault on K8s via Kustomize and using Raft Integrated Storage as Backen
 - It's the service referenced by the StatefulSet `serviceName` key 
 - headless service returns list of IPs for the associated pods
 - A StatefulSet needs a headlessService for Pods discovery and to maintain the Pods sticky network identity
+
+---
+
+### vault-cronjob-daily-snapshot
+- CronJob that will run daily at 11 AM to take a snapshot and upload it to Minio
+- It's based on the image generated via the Dockerfile in the root of this repository, the image uses minideb as a base then adds vault + mc CLIs
+- Rest of the needed configurations are handled as environment variables
 
 ---
 
@@ -88,6 +97,35 @@ Node                                    Address                        State    
 b2507758-85d4-c4f5-bf19-575eb900bf8f    vault-1.vault-headless:8201    follower    true
 b1a97d24-ad93-1fb4-4429-e4fbae3f8eef    vault-2.vault-headless:8201    follower    true
 ```
+
+---
+
+### Backup and Restore Scenario 
+- Backups will be stored in MinIO as follows 
+```bash
+# Take snapshot with current date as the name
+vault operator raft snapshot save `date +"%d-%m-%Y"`.snap
+
+# Upload to minio hosted instance
+mc cp `date +"%d-%m-%Y"`.snap minio/vault
+```
+
+- Assume that the situation is that the main vault instance was running without a PVC and now data is lost but fortunately we took the snapshot 
+- Start by initializing the vault instance once again 
+```bash
+# For quick unsealing 
+vault operator init
+vault operator unseal <3-keys>
+export VAULT_TOKEN=<generated-root-token>
+
+# Download snapshot from minio
+mc cp minio/vault/21-03-2022.snap 21-03-2022.snap
+
+# Restore 
+vault operator raft snapshot restore -force 21-03-2022.snap
+
+```
+- Now unseal once again but this time using the old key shares and old token
 
 ---
 

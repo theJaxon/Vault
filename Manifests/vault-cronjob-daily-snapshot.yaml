@@ -1,0 +1,29 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: vault-daily-snapshot
+spec:
+  # Run daily at 11 AM
+  schedule: "0 11 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: vault-mc
+            # Built locally with Dockerfile available in this repository
+            image: localhost/vault-cj
+            imagePullPolicy: IfNotPresent
+            env:
+            - name: VAULT_ADDR 
+              value: 'http://vault-0.vault-headless.vault:8200'
+            - name: VAULT_TOKEN 
+              value: ''
+            - name: MC_HOST_minio
+              value: 'http://<username>:<password>@minio.minio.svc.cluster.local:9000'
+            command: ["/bin/sh", "-c"]
+            args:
+            - > 
+              vault operator raft snapshot save /tmp/`date +"%d-%m-%Y"`.snap &&
+              mc cp /tmp/`date +"%d-%m-%Y"`.snap minio/vault
+          restartPolicy: OnFailure

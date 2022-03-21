@@ -4,6 +4,7 @@ namespace: vault
 commonLabels:
   app: vault
 resources:
+- vault-cronjob-daily-snapshot.yaml
 - vault-statefulset.yaml
 - vault-service-active.yaml
 - vault-serviceaccount.yaml
